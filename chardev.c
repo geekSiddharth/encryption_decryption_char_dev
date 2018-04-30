@@ -59,14 +59,14 @@ static int device_open(struct inode *inode, struct file *file)
 {
 	static int counter = 0;
 
-	if (Device_Open>0)
-		return -EBUSY;
+	// if (Device_Open>0)
+	// 	return -EBUSY;
 
 	Device_Open++;
-	sprintf(msg, "I already told you %d times Hello world!\n", counter++);
+	// sprintf(msg, "I already told you %d times Hello world!\n", counter++);
 
 
-	msg_Ptr = msg;
+	// msg_Ptr = msg;
 	try_module_get(THIS_MODULE);
 
 	return SUCCESS;
@@ -125,7 +125,7 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
 	printk("msg: %s \n", msg);
 	printk("len: %d \n", len);
 
-	copy_from_user(msg+msg_write_counter,buff,len)
+	copy_from_user(msg+msg_write_counter,buff,len);
 	msg_write_counter+=len;
 	msg_Ptr = msg;
 	printk("msg: %s \n", msg);
