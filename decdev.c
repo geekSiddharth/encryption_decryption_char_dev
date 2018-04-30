@@ -9,28 +9,24 @@
 #include <linux/uaccess.h>	/* for put_user */
 #include <linux/random.h>
 
-/*  
- *  Prototypes - this would normally go in a .h file
- */
 int init_module(void);
 void cleanup_module(void);
 static int device_open(struct inode *, struct file *);
 static int device_release(struct inode *, struct file *);
 static ssize_t device_read(struct file *, char *, size_t, loff_t *);
 static ssize_t device_write(struct file *, const char *, size_t, loff_t *);
-static int write_file_key(char *filename, char* data);
 
 #define SUCCESS 0
-#define DEVICE_NAME "chardev"	/* Dev name as it appears in /proc/devices   */
-#define BUF_LEN 20		/* Max length of the message from the device */
-#define KEY_LEN 16
+#define DEVICE_NAME "decdev"	
+#define BUF_LEN 20	
+#define KEY_LEN 16	
 
-static int Major = 293;
+static int Major = 294;
 static int Device_Open = 0;
 static char msg[BUF_LEN];
 static unsigned char key[KEY_LEN];
 
-static unsigned char orig_key[KEY_LEN];
+extern unsigned char orig_key[KEY_LEN];
 
 
 static int msg_write_counter = 0;
@@ -95,6 +91,7 @@ static ssize_t device_read(struct file *filp,
 	
 	int bytes_read = 0;
 
+	
 	if (*msg_Ptr == 0)
 		return 0;
 
@@ -112,28 +109,17 @@ static ssize_t device_read(struct file *filp,
 		bytes_read++;
 	}
 
-	msg_write_counter = 0;
-
+    msg_write_counter = 0;
+    
 	/* 
 	 * Most read functions return the number of bytes put into the buffer
 	 */
 	return bytes_read;
 }
 
-static ssize_t device_write (struct file *filp, const char *buff, size_t len, loff_t * off) {
+static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off) {
 	
-	
-
-	if(has_key == 0){
-		
-		if(len < 16) {
-			printk(KERN_WARN, "Wrong input. First write to the device should of atleast 16 bytes");
-			return -1;
-		}
-		strncpy(orig_key,buff,KEY_LEN);
-		key_counter = 0;
-		has_key = 1;
-	}	
+	printk("In side encdev: write: key is: %s: \n", orig_key);
 
 	int temp_msg_write_counter;
 	temp_msg_write_counter = msg_write_counter;
@@ -143,28 +129,19 @@ static ssize_t device_write (struct file *filp, const char *buff, size_t len, lo
 
 	printk("msg: %s \n", msg);
 	
-	int i;
+	int i = 0;
     for(i = temp_msg_write_counter; i < msg_write_counter; i++) {
 		
-		if (msg[i] == '\0') {
-			has_key = 0;
-			msg_write_counter = 0;
-			msg_Ptr = msg;
-			return i;
-		}
-
-        msg[i] = msg[i] ^ key[key_counter];
-		key[key_counter] = msg[i];
+        char temp = msg[i];
+        msg[i] = msg[i] ^ orig_key[key_counter];
+		orig_key[key_counter] = temp;
 
 		key_counter = (++key_counter) % KEY_LEN;
 
     }
 
-	printk("encrypted: %s \n", msg);
-
+	printk("decrypted: %s \n", msg);
 
 	msg_Ptr = msg;
 	return len;
 }
-
-EXPORT_SYMBOL(orig_key);
