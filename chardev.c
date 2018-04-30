@@ -27,8 +27,10 @@ static int Major = 293;
 static int Device_Open = 0;
 static char msg[BUF_LEN];
 static unsigned char key[16];
+static unsigned char orig_key[16];
 
 static int msg_write_counter = 0;
+static int key_counter = 0;
 static int has_key = 0;
 
 static char *msg_Ptr;
@@ -118,17 +120,44 @@ static ssize_t device_write(struct file *filp, const char *buff, size_t len, lof
 	if(has_key == 0){
 		has_key = 1;
 		get_random_bytes(key, sizeof(key));
-	}
+		strncpy(orig_key,key,16);
+	}	
 
-
-	
-	printk("msg: %s \n", msg);
-	printk("len: %d \n", len);
+	int temp_msg_write_counter;
+	temp_msg_write_counter = msg_write_counter;
 
 	copy_from_user(msg+msg_write_counter,buff,len);
 	msg_write_counter+=len;
-	msg_Ptr = msg;
+
 	printk("msg: %s \n", msg);
+	
+	int i;
+    for(i = temp_msg_write_counter; i < msg_write_counter; i++) {
+		
+        msg[i] = msg[i] ^ key[key_counter];
+		key[key_counter] = msg[i];
+
+		key_counter = key_counter % 16;
+
+    }
+
+	printk("encrypted: %s \n", msg);
+
+	i = 0;
+	key_counter = 0;
+    for(i = temp_msg_write_counter; i < msg_write_counter; i++) {
+		char temp_co = msg[i];
+        msg[i] = msg[i] ^ orig_key[key_counter];
+		orig_key[key_counter] = temp_co;
+
+		key_counter = key_counter % 16;
+
+    }
+
+	printk("decrypted: %s \n", msg);
+
+	msg_Ptr = msg;
+	//printf("%s\n", tempKey);
 
 	return len;
 }
