@@ -1,9 +1,4 @@
-# Assignment 4
-
-Name: Siddharth Yadav  
-Roll Number: 2016268  
-Group Number: 71  
-
+# Encryption and Decryption
 
 ## Usage
 
